@@ -121,38 +121,49 @@ class TokenTextViewTextStorage: NSTextStorage {
         }
     }
 
-    // TODO: Currently a duplicate from HSTwitterTextColoringTextStorage
-    // That class will be deleted when the Unified Mention feature is deployed
     fileprivate func fixDumQuotes() {
         let nsText = backingStore.string as NSString
+        var replacements: [(range: NSRange, replacement: String)] = []
+        
         nsText.enumerateSubstrings(in: NSRange(location: 0, length: nsText.length),
-                options: NSString.EnumerationOptions.byComposedCharacterSequences,
-                using: { (substring: String?, substringRange: NSRange, _, _) in
-                    if substring == "\"" {
-                        if substringRange.location == 0 {
-                            self.backingStore.replaceCharacters(in: substringRange, with: "“")
-                        } else {
-                            let previousCharacter = nsText.substring(with: NSRange(location: substringRange.location - 1, length: 1))
-                            if previousCharacter == " " || previousCharacter == "\n" {
-                                self.backingStore.replaceCharacters(in: substringRange, with: "“")
-                            } else {
-                                self.backingStore.replaceCharacters(in: substringRange, with: "”")
-                            }
-                        }
-                    } else if substring == "'" {
-                        if substringRange.location == 0 {
-                            self.backingStore.replaceCharacters(in: substringRange, with: "‘")
-                        } else {
-                            let previousCharacter = nsText.substring(with: NSRange(location: substringRange.location - 1, length: 1))
-                            if previousCharacter == " " || previousCharacter == "\n" {
-                                self.backingStore.replaceCharacters(in: substringRange, with: "‘")
-                            } else {
-                                self.backingStore.replaceCharacters(in: substringRange, with: "’")
-                            }
-                        }
+                                   options: .byComposedCharacterSequences) { substring, substringRange, _, _ in
+            guard let substring = substring else { return }
+
+            if substring == "\"" {
+                let replacement: String
+                if substringRange.location == 0 {
+                    replacement = "“"
+                } else {
+                    let previousCharacter = nsText.substring(with: NSRange(location: substringRange.location - 1, length: 1))
+                    if previousCharacter == " " || previousCharacter == "\n" {
+                        replacement = "“"
+                    } else {
+                        replacement = "”"
                     }
-                })
+                }
+                replacements.append((range: substringRange, replacement: replacement))
+            } else if substring == "'" {
+                let replacement: String
+                if substringRange.location == 0 {
+                    replacement = "‘"
+                } else {
+                    let previousCharacter = nsText.substring(with: NSRange(location: substringRange.location - 1, length: 1))
+                    if previousCharacter == " " || previousCharacter == "\n" {
+                        replacement = "‘"
+                    } else {
+                        replacement = "’"
+                    }
+                }
+                replacements.append((range: substringRange, replacement: replacement))
+            }
+        }
+
+        // Apply replacements in reverse order to avoid messing up subsequent indices
+        for (range, replacement) in replacements.reversed() {
+            backingStore.replaceCharacters(in: range, with: replacement)
+        }
     }
+
 
     // MARK: Token utilities
 

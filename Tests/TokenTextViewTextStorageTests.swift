@@ -92,4 +92,22 @@ class TokenTextViewTextStorageTests: XCTestCase {
         return textStorage
     }
 
+    func testFixDumQuotesDoesNotCrash() {
+        //Given
+        let givenTextStorage = TokenTextViewTextStorage()
+        let givenInitialText = "Hello \"world\" 'test' \"another\""
+        
+        //When
+        givenTextStorage.beginEditing()
+        givenTextStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: givenInitialText)
+        givenTextStorage.endEditing()
+        
+        //Then
+        let thenFinalText = givenTextStorage.string
+        XCTAssertFalse(thenFinalText.contains("\""))
+        XCTAssertFalse(thenFinalText.contains("'"))
+        XCTAssertTrue(thenFinalText.contains("“world”"))
+        XCTAssertTrue(thenFinalText.contains("‘test’"))
+        XCTAssertTrue(thenFinalText.contains("“another”"))
+    }
 }
